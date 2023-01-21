@@ -1,0 +1,7 @@
+#planner-canvas {
+  background: url('../img/coral_island_planner.png');
+  border: solid 2px red;
+  cursor: pointer;
+  height: 1280px;
+  width: 1440px;
+}

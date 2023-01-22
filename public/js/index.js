@@ -1,11 +1,20 @@
-const svgNamespace = 'http://www.w3.org/2000/svg';
-const TILE_SIZE = 16;
+/* eslint-disable operator-linebreak */
+// Data to be set later
 let TILLABLE_DATA;
 let BUILDABLE_DATA;
+let FARM_EQUIPMENT_DATA;
 
-// variables to keep track of
-const currentSprite = 'crop';
-const isCrop = true;
+// Enum values
+const svgNamespace = 'http://www.w3.org/2000/svg';
+const TILE_SIZE = 16;
+const DEFAULT_SPRITE = 'crop';
+const EDITOR_MENU_SELECT_TO_DATA_MAP = {
+  'farm-equipment-select': FARM_EQUIPMENT_DATA,
+};
+
+// Variables to keep track of
+let currentSprite = 'crop';
+let isCrop = true;
 const objectTiles = {};
 const isDrag = false;
 
@@ -40,6 +49,14 @@ const normalizePositionWithSnap = (e, newTarget, snap) => {
 // Check if the tile is tillable
 const isTillable = (x, y) => {
   if (TILLABLE_DATA.positions[x] && TILLABLE_DATA.positions[x].includes(y)) {
+    return true;
+  }
+  return false;
+};
+
+// Check if the tile is buildable
+const isBuildable = (x, y) => {
+  if (BUILDABLE_DATA.positions[x] && BUILDABLE_DATA.positions[x].includes(y)) {
     return true;
   }
   return false;
@@ -85,6 +102,10 @@ const createSvgElementWithAttributes = (
   return svgElement;
 };
 
+const updatePointerImage = (pointer, newImage) => {
+  pointer.setAttribute('href', newImage);
+};
+
 const setupEditorListeners = () => {
   const plannerCanvasSvg = document.querySelector('#planner-canvas__svg');
 
@@ -97,15 +118,12 @@ const setupEditorListeners = () => {
       oldPointer.remove();
       oldPointerText.remove();
     }
-    const isTillableTile = isTillable(
-      normalizedPosition.x,
-      normalizedPosition.y,
-    );
-    const svgType = isTillableTile ? 'image' : 'rect';
-    const fill = isTillableTile ? null : 'red';
-    const href = isTillableTile
-      ? `./img/sprites/crops/${currentSprite}.png`
-      : null;
+    const isPlaceableItem =
+      (isCrop && isTillable(normalizedPosition.x, normalizedPosition.y)) ||
+      (!isCrop && isBuildable(normalizedPosition.x, normalizedPosition.y));
+    const svgType = isPlaceableItem ? 'image' : 'rect';
+    const fill = isPlaceableItem ? null : 'red';
+    const href = isPlaceableItem ? `./img/sprites/${currentSprite}.png` : null;
     const pointer = createSvgElementWithAttributes(
       svgType,
       normalizedPosition.x,
@@ -159,7 +177,7 @@ const setupEditorListeners = () => {
           TILE_SIZE,
           null,
           null,
-          `./img/sprites/crops/${currentSprite}.png`,
+          `./img/sprites/${currentSprite}.png`,
         );
         plannerCanvasSvg.appendChild(sprite);
       } else {
@@ -171,11 +189,19 @@ const setupEditorListeners = () => {
 
 const setupFormListeners = () => {
   const editorMenu = document.getElementById('editor-menu');
-  const farmEquipmentSelect = document.getElementById('farm-equipment-select');
-
-  farmEquipmentSelect.onchange = (e) => {
-    console.log(e);
-  };
+  const editorMenuSelects = document.querySelectorAll('select');
+  editorMenuSelects.forEach((formSelect) => {
+    formSelect.onchange = (e) => {
+      console.log(e);
+      const formSelectType = e.target.id;
+      console.log(formSelectType);
+      currentSprite = e.target.value || DEFAULT_SPRITE;
+      isCrop =
+        EDITOR_MENU_SELECT_TO_DATA_MAP[formSelectType][currentSprite].isCrop;
+      const pointer = document.getElementById('pointer');
+      updatePointerImage(pointer, `./img/sprites/${currentSprite}.png`);
+    };
+  });
 };
 
 const getJsonData = async () => {
@@ -184,6 +210,9 @@ const getJsonData = async () => {
   );
   BUILDABLE_DATA = await fetchJsonData(
     'https://raw.githubusercontent.com/geraldiner/coral-island-planner/main/public/js/data/regular_buildable.json',
+  );
+  FARM_EQUIPMENT_DATA = await fetchJsonData(
+    'https://raw.githubusercontent.com/geraldiner/coral-island-planner/main/public/js/data/farm_equipment.json',
   );
   setupEditorListeners();
   setupFormListeners();

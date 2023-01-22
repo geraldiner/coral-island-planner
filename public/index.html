@@ -15,11 +15,20 @@
   </header>
   <main>
     <form id="editor-menu">
-      <label for="farm-equipment-select">Farm equipment</label>
-      <select name="farm-equipment" id="farm-equipment-select">
-        <option value="">Choose a farm equipment</option>
-        <option value="sprinkler_i">Sprinkler I</option>
-      </select>
+      <fieldset>
+        <label for="farm-equipment-select">Farm equipment</label>
+        <select name="farm-equipment" id="farm-equipment-select">
+          <option value="">Choose a farm equipment</option>
+          <option value="sprinkler_i">Sprinkler I</option>
+        </select>
+      </fieldset>
+      <fieldset>
+        <label for="crops-select">Crops</label>
+        <select name="crops" id="crops-select">
+          <option value="">Choose a crop</option>
+          <option value="crop">Crop</option>
+        </select>
+      </fieldset>
     </form>
     <div id="planner-canvas">
       <svg id="planner-canvas__svg" xmlns="http://www.w3.org/2000/svg" width="1440" height="1152">

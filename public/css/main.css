@@ -1,7 +1,35 @@
+.selected {
+  font-weight: bold;
+}
+
 #planner-canvas {
   background: url('../img/coral_island_planner.png');
   border: solid 2px red;
   cursor: pointer;
   height: 1152px;
   width: 1440px;
+}
+
+#pointer {
+  opacity: 0.5;
+}
+
+#pointer-tile-coverage {
+  opacity: 0.3;
+}
+
+.sprinkler_i-tile-coverage,
+.sprinkler_ii-tile-coverage {
+  fill: #00e1ff;
+  opacity: 0.3;
+  stroke: #006eff;
+  stroke-width: 5px;
+  stroke-opacity: 0.8;
+}
+
+.makeshift_scarecrow-tile-coverage,
+.ordinary_scarecrow-tile-coverage,
+.monster_scarecrow-tile-coverage {
+  fill: #00c421;
+  opacity: 0.3;
 }

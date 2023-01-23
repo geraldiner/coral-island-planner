@@ -1,22 +1,26 @@
+/* eslint-disable implicit-arrow-linebreak */
 /* eslint-disable operator-linebreak */
 // Data to be set later
 let TILLABLE_DATA;
 let BUILDABLE_DATA;
 let FARM_EQUIPMENT_DATA;
-
 // Enum values
 const svgNamespace = 'http://www.w3.org/2000/svg';
 const TILE_SIZE = 16;
 const DEFAULT_SPRITE = 'crop';
-const EDITOR_MENU_SELECT_TO_DATA_MAP = {
-  'farm-equipment-select': FARM_EQUIPMENT_DATA,
-};
 
 // Variables to keep track of
-let currentSprite = 'crop';
-let isCrop = true;
-const objectTiles = {};
-const isDrag = false;
+const state = {
+  isPaintbrush: true,
+  objectTiles: {},
+  objects: {},
+  isDragging: false,
+  currentItem: {
+    sprite: DEFAULT_SPRITE,
+    isCrop: true,
+    tileCoverage: null,
+  },
+};
 
 // Fetch json data for restriction checking
 const fetchJsonData = async (uri) => {
@@ -28,6 +32,9 @@ const fetchJsonData = async (uri) => {
     return { Error: error.stack };
   }
 };
+
+// Make copy of object
+const makeDeepCopy = (objToCopy) => JSON.parse(JSON.stringify(objToCopy));
 
 // Simulate "snap to grid" behavior
 const normalizePositionWithSnap = (e, newTarget, snap) => {
@@ -47,35 +54,37 @@ const normalizePositionWithSnap = (e, newTarget, snap) => {
 };
 
 // Check if the tile is tillable
-const isTillable = (x, y) => {
-  if (TILLABLE_DATA.positions[x] && TILLABLE_DATA.positions[x].includes(y)) {
-    return true;
-  }
-  return false;
-};
+const isTillable = (x, y) =>
+  TILLABLE_DATA.positions[x] && TILLABLE_DATA.positions[x].includes(y);
 
 // Check if the tile is buildable
-const isBuildable = (x, y) => {
-  if (BUILDABLE_DATA.positions[x] && BUILDABLE_DATA.positions[x].includes(y)) {
-    return true;
-  }
-  return false;
-};
+const isBuildable = (x, y) =>
+  BUILDABLE_DATA.positions[x] && BUILDABLE_DATA.positions[x].includes(y);
+
+// Check if item is placeable
+const isPlaceable = (x, y) =>
+  (state.currentItem.isCrop && isTillable(x, y)) ||
+  (!state.currentItem.isCrop && isBuildable(x, y));
+
+// Check if item is removable
+const isRemovable = (x, y) =>
+  state.objectTiles[x] && state.objectTiles[x].includes(y);
 
 // Create svg element to add to editor
-const createSvgElementWithAttributes = (
+const createAndAddSvgElementWithAttributes = (
   svgType,
   x,
   y,
   width,
   height,
   fill = null,
-  style = null,
   href = null,
   textContent = null,
   id = null,
   classes = null,
 ) => {
+  const plannerCanvasSvg = document.getElementById('planner-canvas__svg');
+
   const svgElement = document.createElementNS(svgNamespace, svgType);
   svgElement.setAttribute('x', x);
   svgElement.setAttribute('y', y);
@@ -83,9 +92,6 @@ const createSvgElementWithAttributes = (
   svgElement.setAttribute('height', height);
   if (fill) {
     svgElement.setAttribute('fill', fill);
-  }
-  if (style) {
-    svgElement.setAttribute('style', style);
   }
   if (href) {
     svgElement.setAttribute('href', href);
@@ -99,44 +105,101 @@ const createSvgElementWithAttributes = (
   if (classes) {
     svgElement.setAttribute('class', classes);
   }
-  return svgElement;
+  plannerCanvasSvg.appendChild(svgElement);
 };
 
-const updatePointerImage = (pointer, newImage) => {
-  pointer.setAttribute('href', newImage);
+const updatePointerImage = (href) => {
+  const pointer = document.getElementById('pointer');
+  if (!pointer) {
+    createAndAddSvgElementWithAttributes(
+      'image',
+      0,
+      0,
+      TILE_SIZE,
+      TILE_SIZE,
+      null,
+      href,
+      null,
+      'pointer',
+    );
+    return;
+  }
+  pointer.setAttribute('href', href);
 };
 
 const setupEditorListeners = () => {
-  const plannerCanvasSvg = document.querySelector('#planner-canvas__svg');
+  const plannerCanvasSvg = document.getElementById('planner-canvas__svg');
 
   // Follow the cursor movement
   plannerCanvasSvg.addEventListener('mousemove', (e) => {
     const normalizedPosition = normalizePositionWithSnap(e, null, TILE_SIZE);
     const oldPointer = document.getElementById('pointer');
     const oldPointerText = document.getElementById('pointer-text');
+    const oldTileCoverage = document.getElementById('pointer-tile-coverage');
     if (oldPointer) {
       oldPointer.remove();
+    }
+    if (oldPointerText) {
       oldPointerText.remove();
     }
-    const isPlaceableItem =
-      (isCrop && isTillable(normalizedPosition.x, normalizedPosition.y)) ||
-      (!isCrop && isBuildable(normalizedPosition.x, normalizedPosition.y));
-    const svgType = isPlaceableItem ? 'image' : 'rect';
-    const fill = isPlaceableItem ? null : 'red';
-    const href = isPlaceableItem ? `./img/sprites/${currentSprite}.png` : null;
-    const pointer = createSvgElementWithAttributes(
-      svgType,
+    if (oldTileCoverage) {
+      oldTileCoverage.remove();
+    }
+    const isPlaceableItem = isPlaceable(
       normalizedPosition.x,
       normalizedPosition.y,
-      TILE_SIZE,
-      TILE_SIZE,
-      fill,
-      'opacity: 0.5;',
-      href,
-      null,
-      'pointer',
     );
-    const text = createSvgElementWithAttributes(
+    const svgType = isPlaceableItem ? 'image' : 'rect';
+    const fill = isPlaceableItem ? null : 'red';
+    const href = isPlaceableItem
+      ? `./img/sprites/${state.currentItem.sprite}.png`
+      : null;
+    // Place tile coverage if applicable
+    if (state.currentItem.tileCoverage) {
+      createAndAddSvgElementWithAttributes(
+        'rect',
+        normalizedPosition.x -
+          Math.floor(state.currentItem.tileCoverage.width / 2) * TILE_SIZE,
+        normalizedPosition.y -
+          Math.floor(state.currentItem.tileCoverage.height / 2) * TILE_SIZE,
+        state.currentItem.tileCoverage.width * TILE_SIZE,
+        state.currentItem.tileCoverage.height * TILE_SIZE,
+        null,
+        null,
+        null,
+        'pointer-tile-coverage',
+        `${state.currentItem.sprite}-tile-coverage`,
+      );
+    }
+    // Place hover tile
+    if (state.isPaintbrush) {
+      createAndAddSvgElementWithAttributes(
+        svgType,
+        normalizedPosition.x,
+        normalizedPosition.y,
+        TILE_SIZE,
+        TILE_SIZE,
+        fill,
+        href,
+        null,
+        'pointer',
+      );
+    } else {
+      createAndAddSvgElementWithAttributes(
+        'rect',
+        normalizedPosition.x,
+        normalizedPosition.y,
+        TILE_SIZE,
+        TILE_SIZE,
+        '#ff2200',
+        null,
+        null,
+        'pointer',
+      );
+    }
+
+    // Place position text
+    createAndAddSvgElementWithAttributes(
       'text',
       normalizedPosition.x,
       normalizedPosition.y,
@@ -144,44 +207,114 @@ const setupEditorListeners = () => {
       TILE_SIZE,
       '#fff',
       null,
-      null,
       `X: ${normalizedPosition.x}, Y: ${normalizedPosition.y} | 
       Tile: ${normalizedPosition.x / 16}, ${normalizedPosition.y / 16}`,
       'pointer-text',
     );
-    plannerCanvasSvg.appendChild(pointer);
-    plannerCanvasSvg.appendChild(text);
   });
 
-  // Place current sprite
+  // Place/Remote item
   plannerCanvasSvg.addEventListener('click', (e) => {
-    if (!isDrag) {
-      const normalizedPosition = normalizePositionWithSnap(e, null, TILE_SIZE);
-      if (!isTillable(normalizedPosition.x, normalizedPosition.y)) {
-        console.log('this tile is not tillable');
-        return;
-      }
-      if (
-        !objectTiles[normalizedPosition.x] ||
-        !objectTiles[normalizedPosition.x].includes(normalizedPosition.y)
-      ) {
-        if (!objectTiles[normalizedPosition.x]) {
-          objectTiles[normalizedPosition.x] = [];
-        }
-        objectTiles[normalizedPosition.x].push(normalizedPosition.y);
-        const sprite = createSvgElementWithAttributes(
-          'image',
+    if (!state.isDragging) {
+      if (state.isPaintbrush) {
+        const normalizedPosition = normalizePositionWithSnap(
+          e,
+          null,
+          TILE_SIZE,
+        );
+        const isPlaceableItem = isPlaceable(
           normalizedPosition.x,
           normalizedPosition.y,
-          TILE_SIZE,
-          TILE_SIZE,
-          null,
-          null,
-          `./img/sprites/${currentSprite}.png`,
         );
-        plannerCanvasSvg.appendChild(sprite);
+        if (!isPlaceableItem) {
+          console.log('not allowed to place that here');
+          return;
+        }
+        if (
+          !state.objectTiles[normalizedPosition.x] ||
+          !state.objectTiles[normalizedPosition.x].includes(
+            normalizedPosition.y,
+          )
+        ) {
+          if (!state.objectTiles[normalizedPosition.x]) {
+            state.objectTiles[normalizedPosition.x] = [];
+          }
+          state.objectTiles[normalizedPosition.x].push(normalizedPosition.y);
+          state.objects[
+            `${normalizedPosition.x}-${normalizedPosition.y}`
+          ] = `${state.currentItem.sprite}-${normalizedPosition.x}-${normalizedPosition.y}`;
+          // Place tile coverage if applicable
+          if (state.currentItem.tileCoverage) {
+            createAndAddSvgElementWithAttributes(
+              'rect',
+              normalizedPosition.x -
+                Math.floor(state.currentItem.tileCoverage.width / 2) *
+                  TILE_SIZE,
+              normalizedPosition.y -
+                Math.floor(state.currentItem.tileCoverage.height / 2) *
+                  TILE_SIZE,
+              state.currentItem.tileCoverage.width * TILE_SIZE,
+              state.currentItem.tileCoverage.height * TILE_SIZE,
+              null,
+              null,
+              null,
+              `${state.currentItem.sprite}-${normalizedPosition.x}-${normalizedPosition.y}-tile-coverage`,
+              `${state.currentItem.sprite}-tile-coverage`,
+            );
+          }
+          createAndAddSvgElementWithAttributes(
+            'image',
+            normalizedPosition.x,
+            normalizedPosition.y,
+            TILE_SIZE,
+            TILE_SIZE,
+            null,
+            `./img/sprites/${state.currentItem.sprite}.png`,
+            null,
+            `${state.currentItem.sprite}-${normalizedPosition.x}-${normalizedPosition.y}`,
+          );
+        } else {
+          console.log('there is already something here');
+        }
       } else {
-        console.log('there is already something here');
+        const normalizedPosition = normalizePositionWithSnap(
+          e,
+          null,
+          TILE_SIZE,
+        );
+        if (isRemovable(normalizedPosition.x, normalizedPosition.y)) {
+          const itemToBeDeleted =
+            state.objects[`${normalizedPosition.x}-${normalizedPosition.y}`];
+          // Delete item from state.objectTiles
+          const copyOfObjectTiles = makeDeepCopy(state.objectTiles);
+          const tilesInThisRow = copyOfObjectTiles[normalizedPosition.x];
+          const indexOfItemToBeRemoved = tilesInThisRow.indexOf(
+            normalizedPosition.y,
+          );
+          if (indexOfItemToBeRemoved > -1) {
+            tilesInThisRow.splice(indexOfItemToBeRemoved, 1);
+          }
+          state.objectTiles[normalizedPosition.x] = tilesInThisRow;
+          // Delete item from DOM
+          const svgItemToBeDeleted = document.getElementById(itemToBeDeleted);
+          const svgTileCoverageToBeDeleted = document.getElementById(
+            `${itemToBeDeleted}-tile-coverage`,
+          );
+          if (svgItemToBeDeleted) {
+            svgItemToBeDeleted.remove();
+          }
+          if (svgTileCoverageToBeDeleted) {
+            svgTileCoverageToBeDeleted.remove();
+          }
+          // Delete item from objects
+          const copyOfObjects = makeDeepCopy(state.objects);
+          delete copyOfObjects[
+            `${normalizedPosition.x}-${normalizedPosition.y}`
+          ];
+          state.objects = copyOfObjects;
+        } else {
+          console.log('nothing to delete here');
+        }
       }
     }
   });
@@ -189,17 +322,73 @@ const setupEditorListeners = () => {
 
 const setupFormListeners = () => {
   const editorMenu = document.getElementById('editor-menu');
+  const editorMenuInputs = editorMenu.querySelectorAll('input');
+  editorMenuInputs.forEach((formInput) => {
+    formInput.onclick = (e) => {
+      console.log(e);
+      console.log(e.target.value);
+      console.log(e.target.name);
+      if (e.target.name === 'editor-tool') {
+        state.isPaintbrush = e.target.value.toLowerCase() === 'paintbrush';
+        document.getElementById('eraser').classList.toggle('selected');
+        document.getElementById('paintbrush').classList.toggle('selected');
+        if (state.isPaintbrush) {
+          state.currentItem.sprite = DEFAULT_SPRITE;
+          state.currentItem.isCrop = true;
+          state.currentItem.tileCoverage = null;
+        } else {
+          const oldPointer = document.getElementById('pointer');
+          const oldTileCoverage = document.getElementById(
+            'pointer-tile-coverage',
+          );
+          if (oldPointer) {
+            oldPointer.remove();
+          }
+          if (oldTileCoverage) {
+            oldTileCoverage.remove();
+          }
+          state.currentItem.tileCoverage = null;
+          const normalizedPosition = normalizePositionWithSnap(
+            e,
+            null,
+            TILE_SIZE,
+          );
+          createAndAddSvgElementWithAttributes(
+            'rect',
+            normalizedPosition.x,
+            normalizedPosition.y,
+            TILE_SIZE,
+            TILE_SIZE,
+            '#ff2200',
+            null,
+            null,
+            'pointer',
+          );
+        }
+      }
+    };
+  });
   const editorMenuSelects = document.querySelectorAll('select');
   editorMenuSelects.forEach((formSelect) => {
     formSelect.onchange = (e) => {
-      console.log(e);
+      if (!state.isPaintbrush) {
+        console.log('hi');
+        state.isPaintbrush = true;
+        document.getElementById('eraser').classList.toggle('selected');
+        document.getElementById('paintbrush').classList.toggle('selected');
+      }
       const formSelectType = e.target.id;
-      console.log(formSelectType);
-      currentSprite = e.target.value || DEFAULT_SPRITE;
-      isCrop =
-        EDITOR_MENU_SELECT_TO_DATA_MAP[formSelectType][currentSprite].isCrop;
-      const pointer = document.getElementById('pointer');
-      updatePointerImage(pointer, `./img/sprites/${currentSprite}.png`);
+      state.currentItem.sprite = e.target.value || DEFAULT_SPRITE;
+      state.currentItem.isCrop = e.target.value
+        ? formSelectType.startsWith('crops')
+        : true;
+      state.currentItem.tileCoverage =
+        e.target.value && formSelectType.startsWith('farm-equipment')
+          ? FARM_EQUIPMENT_DATA[e.target.value].tileCoverage
+          : null;
+      console.log(state.currentItem);
+      const href = `./img/sprites/${state.currentItem.sprite}.png`;
+      updatePointerImage(href);
     };
   });
 };

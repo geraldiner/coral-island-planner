@@ -14,12 +14,20 @@
     <nav></nav>
   </header>
   <main>
-    <form id="editor-menu">
+    <form id="editor-menu" autocomplete="off">
+      <fieldset>
+        <legend>Editor Tool</legend>
+        <input id="paintbrush" type="button" name="editor-tool" value="Paintbrush" class="selected" />
+        <input id="eraser" type="button" name="editor-tool" value="Eraser" />
+      </fieldset>
       <fieldset>
         <label for="farm-equipment-select">Farm equipment</label>
         <select name="farm-equipment" id="farm-equipment-select">
           <option value="">Choose a farm equipment</option>
           <option value="sprinkler_i">Sprinkler I</option>
+          <option value="sprinkler_ii">Sprinkler II</option>
+          <option value="makeshift_scarecrow">Makeshift Scarecrow</option>
+          <option value="ordinary_scarecrow">Ordinary Scarecrow</option>
         </select>
       </fieldset>
       <fieldset>
@@ -34,8 +42,11 @@
       <svg id="planner-canvas__svg" xmlns="http://www.w3.org/2000/svg" width="1440" height="1152">
         <image href="" preserveAspectRatio="none" x="0" y="0" width="1440" height="1152"></image>
         <defs>
-          <pattern x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse" id="grid" viewBox="0 0 16 16">
+          <pattern id="grid" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse" viewBox="0 0 16 16">
             <path d="M 16 0 L 0 0 0 16" style="stroke-width: 0.5px;" fill="none" stroke="#808080"></path>
+          </pattern>
+          <pattern id="eraser" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse" viewBox="0 0 16 16">
+            <rect fill="red" style="opacity: 0.5;"></rect>
           </pattern>
         </defs>
         <rect id="editor" x="0" y="0" width="1440" height="1152" fill="url(#grid)"></rect>

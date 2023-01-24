@@ -2,4 +2,6 @@ const TILE_SIZE = 16;
 
 const DEFAULT_SPRITE = 'crop';
 
-module.exports = { DEFAULT_SPRITE, TILE_SIZE };
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+
+export { DEFAULT_SPRITE, SVG_NAMESPACE, TILE_SIZE };

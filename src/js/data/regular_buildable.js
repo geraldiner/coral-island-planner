@@ -931,4 +931,4 @@ const BUILDABLE_DATA = {
   },
 };
 
-module.exports = { BUILDABLE_DATA };
+export { BUILDABLE_DATA };

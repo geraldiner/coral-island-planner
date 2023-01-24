@@ -36,4 +36,4 @@ const FARM_EQUIPMENT_DATA = {
   },
 };
 
-module.exports = { FARM_EQUIPMENT_DATA };
+export { FARM_EQUIPMENT_DATA };

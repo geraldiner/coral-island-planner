@@ -1,15 +1,14 @@
-import { TILE_SIZE } from '../enums';
-import { TILLABLE_DATA } from './data/regular_tillable';
-import { BUILDABLE_DATA } from './data/regular_buildable';
-import { FARM_EQUIPMENT_DATA } from './data/farm_equipment';
-
-/* eslint-disable implicit-arrow-linebreak */
 /* eslint-disable operator-linebreak */
-// Data to be set later
-// Enum values
-const svgNamespace = 'http://www.w3.org/2000/svg';
-const DEFAULT_SPRITE = 'crop';
-
+import { DEFAULT_SPRITE, TILE_SIZE } from './enums';
+import { FARM_EQUIPMENT_DATA } from './data/farm_equipment';
+import {
+  createAndAddSvgElementWithAttributes,
+  isPlaceable,
+  isRemovable,
+  makeDeepCopy,
+  normalizePositionWithSnap,
+  updatePointerImage,
+} from './utils';
 // Variables to keep track of
 const state = {
   isPaintbrush: true,
@@ -21,99 +20,6 @@ const state = {
     isCrop: true,
     tileCoverage: null,
   },
-};
-// Make copy of object
-const makeDeepCopy = (objToCopy) => JSON.parse(JSON.stringify(objToCopy));
-
-// Simulate "snap to grid" behavior
-const normalizePositionWithSnap = (e, newTarget, snap) => {
-  const target = newTarget || e.currentTarget;
-  const rect = target.getBoundingClientRect();
-  let offsetX = e.clientX - rect.left;
-  let offsetY = e.clientY - rect.top;
-
-  if (snap) {
-    offsetX = Math.floor(offsetX / snap) * snap;
-    offsetY = Math.floor(offsetY / snap) * snap;
-  }
-  return {
-    x: offsetX,
-    y: offsetY,
-  };
-};
-
-// Check if the tile is tillable
-const isTillable = (x, y) =>
-  TILLABLE_DATA.positions[x] && TILLABLE_DATA.positions[x].includes(y);
-
-// Check if the tile is buildable
-const isBuildable = (x, y) =>
-  BUILDABLE_DATA.positions[x] && BUILDABLE_DATA.positions[x].includes(y);
-
-// Check if item is placeable
-const isPlaceable = (x, y) =>
-  (state.currentItem.isCrop && isTillable(x, y)) ||
-  (!state.currentItem.isCrop && isBuildable(x, y));
-
-// Check if item is removable
-const isRemovable = (x, y) =>
-  state.objectTiles[x] && state.objectTiles[x].includes(y);
-
-// Create svg element to add to editor
-const createAndAddSvgElementWithAttributes = (
-  svgType,
-  x,
-  y,
-  width,
-  height,
-  fill = null,
-  href = null,
-  textContent = null,
-  id = null,
-  classes = null,
-) => {
-  const plannerCanvasSvg = document.getElementById('planner-canvas__svg');
-
-  const svgElement = document.createElementNS(svgNamespace, svgType);
-  svgElement.setAttribute('x', x);
-  svgElement.setAttribute('y', y);
-  svgElement.setAttribute('width', width);
-  svgElement.setAttribute('height', height);
-  if (fill) {
-    svgElement.setAttribute('fill', fill);
-  }
-  if (href) {
-    svgElement.setAttribute('href', href);
-  }
-  if (textContent) {
-    svgElement.textContent = textContent;
-  }
-  if (id) {
-    svgElement.setAttribute('id', id);
-  }
-  if (classes) {
-    svgElement.setAttribute('class', classes);
-  }
-  plannerCanvasSvg.appendChild(svgElement);
-};
-
-const updatePointerImage = (href) => {
-  const pointer = document.getElementById('pointer');
-  if (!pointer) {
-    createAndAddSvgElementWithAttributes(
-      'image',
-      0,
-      0,
-      TILE_SIZE,
-      TILE_SIZE,
-      null,
-      href,
-      null,
-      'pointer',
-    );
-    return;
-  }
-  pointer.setAttribute('href', href);
 };
 
 const setupEditorListeners = () => {
@@ -135,6 +41,7 @@ const setupEditorListeners = () => {
       oldTileCoverage.remove();
     }
     const isPlaceableItem = isPlaceable(
+      state.currentItem,
       normalizedPosition.x,
       normalizedPosition.y,
     );
@@ -212,6 +119,7 @@ const setupEditorListeners = () => {
           TILE_SIZE,
         );
         const isPlaceableItem = isPlaceable(
+          state.currentItem,
           normalizedPosition.x,
           normalizedPosition.y,
         );
@@ -271,7 +179,13 @@ const setupEditorListeners = () => {
           null,
           TILE_SIZE,
         );
-        if (isRemovable(normalizedPosition.x, normalizedPosition.y)) {
+        if (
+          isRemovable(
+            state.objectTiles,
+            normalizedPosition.x,
+            normalizedPosition.y,
+          )
+        ) {
           const itemToBeDeleted =
             state.objects[`${normalizedPosition.x}-${normalizedPosition.y}`];
           // Delete item from state.objectTiles
@@ -390,7 +304,7 @@ const setupFormListeners = () => {
 };
 
 window.addEventListener('load', () => {
-  console.log('window onload says hi');
-  setupEditorListeners();
+  console.log('window.onload says hi');
   setupFormListeners();
+  setupEditorListeners();
 });

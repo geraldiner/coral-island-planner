@@ -886,4 +886,4 @@ const TILLABLE_DATA = {
   },
 };
 
-module.export = { TILLABLE_DATA };
+export { TILLABLE_DATA };

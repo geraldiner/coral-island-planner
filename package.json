@@ -2,10 +2,11 @@
   "name": "coral-island-planner",
   "version": "1.0.0",
   "description": "",
+  "private": true,
   "main": "index.js",
   "scripts": {
     "start": "cross-env NODE_ENV=production node index",
-    "dev": "cross-env NODE_ENV=development nodemon index",
+    "dev": "concurrently \"cross-env NODE_ENV=development nodemon index\" \"npm run webpack:watch\"",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "webpack:watch": "webpack --watch"
@@ -22,6 +23,7 @@
   },
   "homepage": "https://github.com/geraldiner/coral-island-planner#readme",
   "devDependencies": {
+    "concurrently": "^7.6.0",
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.3",
     "eslint": "^8.32.0",
@@ -31,12 +33,11 @@
     "eslint-plugin-prettier": "^4.2.1",
     "morgan": "^1.10.0",
     "nodemon": "^2.0.20",
-    "prettier": "^2.8.3"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "snapsvg": "^0.5.1",
+    "prettier": "^2.8.3",
     "webpack": "^5.75.0",
     "webpack-cli": "^5.0.1"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
   }
 }

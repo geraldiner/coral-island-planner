@@ -1,5 +1,5 @@
 /* eslint-disable operator-linebreak */
-import { DEFAULT_SPRITE, TILE_SIZE } from './enums';
+import { DEFAULT_ITEM, TILE_SIZE } from './enums';
 import { FARM_EQUIPMENT_DATA } from './data/farm_equipment';
 import {
   createAndAddSvgElementWithAttributes,
@@ -15,11 +15,7 @@ const state = {
   objectTiles: {},
   objects: {},
   isDragging: false,
-  currentItem: {
-    sprite: DEFAULT_SPRITE,
-    isCrop: true,
-    tileCoverage: null,
-  },
+  currentItem: DEFAULT_ITEM,
 };
 
 const setupEditorListeners = () => {
@@ -243,9 +239,7 @@ const setupFormListeners = () => {
         document.getElementById('eraser').classList.toggle('selected');
         document.getElementById('paintbrush').classList.toggle('selected');
         if (state.isPaintbrush) {
-          state.currentItem.sprite = DEFAULT_SPRITE;
-          state.currentItem.isCrop = true;
-          state.currentItem.tileCoverage = null;
+          state.currentItem = DEFAULT_ITEM;
         } else {
           const oldPointer = document.getElementById('pointer');
           const oldTileCoverage = document.getElementById(
@@ -275,6 +269,9 @@ const setupFormListeners = () => {
             'pointer',
           );
         }
+        document.getElementById('current-tool').innerText = `Current tool: ${
+          e.target.value
+        }${state.isPaintbrush ? ` - ${state.currentItem.displayName}` : ''}`;
       }
     };
   });
@@ -282,23 +279,19 @@ const setupFormListeners = () => {
   editorMenuSelects.forEach((formSelect) => {
     formSelect.onchange = (e) => {
       if (!state.isPaintbrush) {
-        console.log('hi');
         state.isPaintbrush = true;
         document.getElementById('eraser').classList.toggle('selected');
         document.getElementById('paintbrush').classList.toggle('selected');
       }
-      const formSelectType = e.target.id;
-      state.currentItem.sprite = e.target.value || DEFAULT_SPRITE;
-      state.currentItem.isCrop = e.target.value
-        ? formSelectType.startsWith('crops')
-        : true;
-      state.currentItem.tileCoverage =
-        e.target.value && formSelectType.startsWith('farm-equipment')
-          ? FARM_EQUIPMENT_DATA[e.target.value].tileCoverage
-          : null;
-      console.log(state.currentItem);
+      state.currentItem =
+        e.target.value === 'crop'
+          ? DEFAULT_ITEM
+          : FARM_EQUIPMENT_DATA[e.target.value];
       const href = `./img/sprites/${state.currentItem.sprite}.png`;
       updatePointerImage(href);
+      document.getElementById('current-tool').innerText = `Current tool: ${
+        state.isPaintbrush ? 'Paintbrush' : 'Eraser'
+      }${state.isPaintbrush ? ` - ${state.currentItem.displayName}` : ''}`;
     };
   });
 };

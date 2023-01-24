@@ -6,7 +6,7 @@ module.exports = {
     node: true,
   },
   extends: ['plugin:prettier/recommended', 'airbnb-base'],
-  ignorePatterns: ['node_modules', 'tiled', 'lib'],
+  ignorePatterns: ['node_modules', 'tiled', 'lib', 'public'],
   overrides: [],
   parserOptions: {
     ecmaVersion: 'latest',

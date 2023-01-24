@@ -15,7 +15,7 @@
   \**********************/
 /***/ (function(module) {
 
-eval("const TILE_SIZE = 16;\r\n\r\nmodule.exports = { TILE_SIZE };\r\n\n\n//# sourceURL=webpack://coral-island-planner/./src/enums.js?");
+eval("const TILE_SIZE = 16;\n\nmodule.exports = { TILE_SIZE };\n\n\n//# sourceURL=webpack://coral-island-planner/./src/enums.js?");
 
 /***/ }),
 

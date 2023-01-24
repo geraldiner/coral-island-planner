@@ -1,11 +1,11 @@
 import { TILE_SIZE } from '../enums';
+import { TILLABLE_DATA } from './data/regular_tillable';
+import { BUILDABLE_DATA } from './data/regular_buildable';
+import { FARM_EQUIPMENT_DATA } from './data/farm_equipment';
 
 /* eslint-disable implicit-arrow-linebreak */
 /* eslint-disable operator-linebreak */
 // Data to be set later
-let TILLABLE_DATA;
-let BUILDABLE_DATA;
-let FARM_EQUIPMENT_DATA;
 // Enum values
 const svgNamespace = 'http://www.w3.org/2000/svg';
 const DEFAULT_SPRITE = 'crop';
@@ -22,18 +22,6 @@ const state = {
     tileCoverage: null,
   },
 };
-
-// Fetch json data for restriction checking
-const fetchJsonData = async (uri) => {
-  try {
-    const response = await fetch(uri);
-    const json = await response.json();
-    return json;
-  } catch (error) {
-    return { Error: error.stack };
-  }
-};
-
 // Make copy of object
 const makeDeepCopy = (objToCopy) => JSON.parse(JSON.stringify(objToCopy));
 
@@ -401,20 +389,8 @@ const setupFormListeners = () => {
   });
 };
 
-const getJsonData = async () => {
-  TILLABLE_DATA = await fetchJsonData(
-    'https://raw.githubusercontent.com/geraldiner/coral-island-planner/main/public/js/data/regular_tillable.json',
-  );
-  BUILDABLE_DATA = await fetchJsonData(
-    'https://raw.githubusercontent.com/geraldiner/coral-island-planner/main/public/js/data/regular_buildable.json',
-  );
-  FARM_EQUIPMENT_DATA = await fetchJsonData(
-    'https://raw.githubusercontent.com/geraldiner/coral-island-planner/main/public/js/data/farm_equipment.json',
-  );
-  setupEditorListeners();
-  setupFormListeners();
-};
 window.addEventListener('load', () => {
   console.log('window onload says hi');
-  getJsonData();
+  setupEditorListeners();
+  setupFormListeners();
 });

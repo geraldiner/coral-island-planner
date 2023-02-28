@@ -224,9 +224,8 @@ const setupFormListeners = () => {
   const editorMenuInputs = editorMenu.querySelectorAll('input');
   editorMenuInputs.forEach((formInput) => {
     formInput.onclick = (e) => {
-      console.log(e);
-      console.log(e.target.value);
       console.log(e.target.name);
+      console.log(e.target.value);
       if (e.target.name === 'editor-tool') {
         if (
           state.isPaintbrush ===
@@ -278,6 +277,9 @@ const setupFormListeners = () => {
   const editorMenuSelects = document.querySelectorAll('select');
   editorMenuSelects.forEach((formSelect) => {
     formSelect.onchange = (e) => {
+      console.log(e);
+      console.log(e.target.name);
+      console.log(e.target.value);
       if (!state.isPaintbrush) {
         state.isPaintbrush = true;
         document.getElementById('eraser').classList.toggle('selected');

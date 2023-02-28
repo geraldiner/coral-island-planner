@@ -1,6 +1,7 @@
 const FARM_EQUIPMENT_DATA = {
   makeshift_scarecrow: {
     displayName: 'Makeshift Scarecrow',
+    sprite: 'makeshift_scarecrow',
     isCrop: false,
     tileCoverage: {
       width: 5,
@@ -9,6 +10,7 @@ const FARM_EQUIPMENT_DATA = {
   },
   ordinary_scarecrow: {
     displayName: 'Ordinary Scarecrow',
+    sprite: 'ordinary_scarecrow',
     isCrop: false,
     tileCoverage: {
       width: 11,
@@ -17,6 +19,7 @@ const FARM_EQUIPMENT_DATA = {
   },
   monster_scarecrow: {
     displayName: 'Monster Scarecrow',
+    sprite: 'monster_scarecrow',
     isCrop: false,
     tileCoverage: {
       width: 15,
@@ -25,6 +28,7 @@ const FARM_EQUIPMENT_DATA = {
   },
   sprinkler_i: {
     displayName: 'Sprinkler I',
+    sprite: 'sprinkler_i',
     isCrop: false,
     tileCoverage: {
       width: 3,
@@ -33,6 +37,7 @@ const FARM_EQUIPMENT_DATA = {
   },
   sprinkler_ii: {
     displayName: 'Sprinkler II',
+    sprite: 'sprinkler_ii',
     isCrop: false,
     tileCoverage: {
       width: 5,
